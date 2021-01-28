@@ -10,18 +10,18 @@
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="a not-so-brief exploration of the tryhackme “0day” room" />
 <meta property="og:description" content="a not-so-brief exploration of the tryhackme “0day” room" />
-<link rel="canonical" href="http://localhost:1010/blog/THM-0DAY-writeup" />
-<meta property="og:url" content="http://localhost:1010/blog/THM-0DAY-writeup" />
+<link rel="canonical" href="http://localhost:4000/blog/THM-0DAY-writeup" />
+<meta property="og:url" content="http://localhost:4000/blog/THM-0DAY-writeup" />
 <meta property="og:site_name" content="JamBlog" />
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2020-11-05T00:00:00+00:00" />
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="Tryhackme! 0day writeup" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","url":"http://localhost:1010/blog/THM-0DAY-writeup","headline":"Tryhackme! 0day writeup","dateModified":"2020-11-05T00:00:00+00:00","datePublished":"2020-11-05T00:00:00+00:00","author":{"@type":"Person","name":"JamBot"},"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:1010/blog/THM-0DAY-writeup"},"description":"a not-so-brief exploration of the tryhackme “0day” room","@context":"https://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/blog/THM-0DAY-writeup","headline":"Tryhackme! 0day writeup","dateModified":"2020-11-05T00:00:00+00:00","datePublished":"2020-11-05T00:00:00+00:00","author":{"@type":"Person","name":"JamBot"},"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/blog/THM-0DAY-writeup"},"description":"a not-so-brief exploration of the tryhackme “0day” room","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/css/style.css">
-  <link rel="icon" type="image/png" href="/assets/favicon.png" /><link type="application/atom+xml" rel="alternate" href="http://localhost:1010/feed.xml" title="JamBlog" /></head>
+  <link rel="icon" type="image/png" href="/assets/favicon.png" /><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="JamBlog" /></head>
 <body><div class="site-header">
   <div class="wrapper">
     <a class="site-title" rel="author" href="/">JamBlog<b class="command_prompt"></b><b class="blinking_cursor">_</b></a>
@@ -180,7 +180,7 @@ Nmap done: 1 IP address (1 host up) scanned in 9.46 seconds
 
 <p>So, now I’m gonna look at the website, see if it has any functionality we can exploit. Normally static websites are harder to exploit as there is very little actual code running, it is often times just barebones HTML and CSS. So, if this site isn’t static- and has login forms, upload functionality etc- then we will definitely want too look for exploits in it.</p>
 
-<p><img src="http://localhost:1010/assets/images/0day-ryan.png" /></p>
+<p><img src="https://jambot3000.github.io/assets/images/0day-ryan.png" /></p>
 
 <p>So, looking at the site we can see there isn’t a whole lot going on. Let’s look at the source code. Often times in easy CTF challenges, you can find useful stuff hidden in the source. In reality this isn’t really all that common- no sane devs leave passwords as a comment in source lol. Or do they <a href="https://qz.com/674520/companies-are-sharing-their-secret-access-codes-on-github-and-they-may-not-even-know-it/">???</a></p>
 
@@ -309,7 +309,7 @@ jambot@dishwasher:~$
 
 <p>Yea, so everything seems in working ord- HOLD ON! Let’s see if you can spot the rogue file. If you guess <code class="highlighter-rouge">test.cgi</code>, you’re correct! cgi-bin should not expose any of it’s scripts, especially a sketchy looking one like this. In fact, you don’t need specific knowlege of this file to know this is a vulnerability. Just googling “cgi bin test.cgi” nets you results like these…</p>
 
-<p><img src="http://localhost:1010/assets/images/googlesearchtestcgi.png" /></p>
+<p><img src="https://jambot3000.github.io/assets/images/googlesearchtestcgi.png" /></p>
 
 <p>When looking for exploits, this is always a good sign. Always be sure to google version numbers etc when looking for CVE’s. One of the first results down was this:</p>
 
@@ -317,7 +317,7 @@ jambot@dishwasher:~$
 
 <p>If you were to follow along with this site- you would see that it talks about an <a href="https://en.wikipedia.org/wiki/Arbitrary_code_execution">RCE</a>. It gives a simple one liner to achieve this:</p>
 
-<p><img src="http://localhost:1010/assets/images/shellshocked_example.png" /></p>
+<p><img src="https://jambot3000.github.io/assets/images/shellshocked_example.png" /></p>
 
 <p>It’s also worth mentioning that using a tool such as nikto would have also find this vulnerability, however only versions <code class="highlighter-rouge">2.1.6</code> seem to be able to find it.</p>
 
@@ -1016,7 +1016,7 @@ You really thought it'd be this easy?
 <span class="nt">&lt;/body&gt;&lt;/html&gt;</span>
 </code></pre></div></div>
 
-<p><img src="http://localhost:1010/assets/images/nanidog.jpg" height="200" /></p>
+<p><img src="https://jambot3000.github.io/assets/images/nanidog.jpg" height="200" /></p>
 
 <p>Lol jk this isn’t a problem don’t worry. In fact if you just read, it tells you what to do, we need to add a <code class="highlighter-rouge">/</code> to the end. Let’s try it.</p>
 
@@ -1043,7 +1043,7 @@ You really thought it'd be this easy?
 
 <p>So, here is the image:</p>
 
-<p><img src="http://localhost:1010/assets/images/turtle.png" /></p>
+<p><img src="https://jambot3000.github.io/assets/images/turtle.png" /></p>
 
 <p>So although it looks fine, it’s still probably worth checking it for some basic steg stuff.</p>
 
@@ -1171,7 +1171,7 @@ root@10.10.223.85's password:
 
 <p>Anyways thankyou byeee!!</p>
 
-<p><img src="http://localhost:1010/assets/images/cutecat.gif" /></p>
+<p><img src="https://jambot3000.github.io/assets/images/cutecat.gif" /></p>
 
 </div>
 
